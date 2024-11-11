@@ -11,6 +11,7 @@ import os
 NUM_COLORS_MAIN = 15  # Количество цветов для главных объектов (корректируем до 20)
 NUM_COLORS_BACKGROUND = 10  # Количество цветов для фона
 MIN_AREA_CONTOUR = 30  # Минимальная площадь полигона (в пикселях)
+CIRCLE_RADIUS = 5  # Радиус круга (в пикселях)
 MAX_DIMENSION = 1000  # Максимальный размер изображения для обработки (в пикселях)
 MEAN_SHIFT_RADIUS = 21  # Радиус фильтра Mean Shift для сглаживания фона
 MEAN_SHIFT_COLOR = 41  # Радиус цветового пространства для фильтрации фона
@@ -88,7 +89,7 @@ def create_paint_by_numbers(image_path):
     combined_image = np.clip(combined_image, 0, 255)
 
     blank_image = np.ones_like(combined_image, dtype=np.uint8) * 255
-    transparent_image = ((combined_image * 0.8) + (blank_image * 0.2)).astype(np.uint8)  # Четвертое изображение, светлее
+    transparent_image = ((combined_image * 0.8) + (blank_image * 0.2)).astype(np.uint8)
     label_matrix_main = main_labels.reshape((new_height, new_width))
     label_matrix_background = background_labels.reshape((new_height, new_width))
     all_centers = np.concatenate((main_centers, background_centers), axis=0)
@@ -113,6 +114,9 @@ def create_paint_by_numbers(image_path):
                         cv2.putText(blank_image, str(i + 1), (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, FONT_COLOR, FONT_THICKNESS)
                         cv2.putText(transparent_image, str(i + 1), (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, FONT_COLOR, FONT_THICKNESS)
 
+    blank_image_large = cv2.resize(blank_image, (combined_image.shape[1] * 2, combined_image.shape[0] * 2))
+    transparent_image_large = cv2.resize(transparent_image, (combined_image.shape[1] * 2, combined_image.shape[0] * 2))
+
     fig, ax = plt.subplots(1, 4, figsize=(24, 6))
     ax[0].imshow(image)
     ax[0].set_title("Original Image")
@@ -122,12 +126,12 @@ def create_paint_by_numbers(image_path):
     ax[1].set_title("Paint by Numbers")
     ax[1].axis("off")
 
-    ax[2].imshow(blank_image)
-    ax[2].set_title("Outline with Numbers")
+    ax[2].imshow(blank_image_large)
+    ax[2].set_title("Outline with Numbers (Large)")
     ax[2].axis("off")
 
-    ax[3].imshow(transparent_image)
-    ax[3].set_title("Transparent with Numbers")
+    ax[3].imshow(transparent_image_large)
+    ax[3].set_title("Transparent with Numbers (Large)")
     ax[3].axis("off")
 
     os.makedirs("./saved", exist_ok=True)
@@ -137,6 +141,10 @@ def create_paint_by_numbers(image_path):
     blank_image.save("./saved/blank_image.jpg")
     transparent_image = Image.fromarray(transparent_image.astype(np.uint8))
     transparent_image.save("./saved/transparent_image.jpg")
+    blank_image_large = Image.fromarray(blank_image_large.astype(np.uint8))
+    blank_image_large.save("./saved/blank_image_large.jpg")
+    transparent_image_large = Image.fromarray(transparent_image_large.astype(np.uint8))
+    transparent_image_large.save("./saved/transparent_image_large.jpg")
     with open("./saved/colors.txt", "w", encoding="utf-8") as file:
         file.write(colors)
 
